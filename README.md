@@ -135,3 +135,22 @@ mosquitto_pub -h broker.emqx.io -p 1883 -t "auditoria/esp32/datos" -m "666" -d
 <img width="1917" height="731" alt="image" src="https://github.com/user-attachments/assets/369a883b-eae3-471d-8308-a0f93ec813e9" />
 
 **Resultado:** Hemos podido mandar información errónea al topic con éxito, demostrando que el canal es vulnerable a ataques de inyección si no se implementa autenticación.
+
+## Conclusión: Riesgos del compromiso físico de hardware
+
+A lo largo de esta auditoría hemos visto cómo inyectar datos en un canal sin protección. Sin embargo, surge una pregunta crítica y más avanzada: ¿Qué pasaría si implementamos usuario y contraseña, pero un atacante logra hackear el hardware (por ejemplo, volcando la memoria flash del ESP32 donde está el firmware) y obtiene esas credenciales en texto plano? ¿Podría controlar otros dispositivos de la red?
+
+La respuesta es sí, es totalmente posible y representa una de las vulnerabilidades más críticas en entornos IoT.
+
+Si un atacante extrae las credenciales MQTT de un dispositivo (como una simple bombilla inteligente), las consecuencias dependerán de cómo esté configurado el broker:
+
+1. **Credenciales compartidas:** Si por comodidad todos los dispositivos de la red (sensores, cerraduras inteligentes, relés industriales) usan el mismo usuario y contraseña para conectarse al Broker, el atacante obtendrá acceso a todo. Podrá suscribirse a cualquier topic para espiar información y publicar comandos para activar o desactivar dispositivos como cerraduras inteligentes
+2. **Falta de segmentación lógica:** Si el usuario robado tiene permisos globales, el atacante podrá suplantar la identidad del servidor central o de otros nodos.
+
+### Mitigación frente al compromiso de hardware
+
+Para evitar que el hackeo de un solo ESP32 comprometa toda la infraestructura, se deben aplicar estas reglas:
+
+* **Credenciales únicas:** Cada dispositivo físico debe tener su propio par de usuario/contraseña, o preferiblemente, su propio certificado individual (TLS mutuo o mTLS).
+* **Listas de Control de Acceso (ACLs):** El Broker debe restringir estrictamente qué puede hacer cada credencial (principio de mínimo privilegio). El sensor de temperatura A solo debe tener permiso para escribir en el topic `casa/temperatura/A` y debe tener prohibida la lectura o escritura en el topic `casa/cerradura/#`. Si hackean el sensor A, el atacante solo podrá falsear la temperatura, pero no abrir la puerta.
+* **Almacenamiento seguro:** No guardar contraseñas, user, etc. en texto plano en el código fuente. Utilizar tecnologías como particiones NVS encriptadas (Non-Volatile Storage) o elementos seguros por hardware.
