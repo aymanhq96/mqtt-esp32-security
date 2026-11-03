@@ -96,3 +96,42 @@ void loop() {
     valor += 10; 
   }
 }
+```
+
+## Auditoría desde terminal en Kali Linux
+
+En primer lugar, actualizamos los repositorios e instalamos los clientes de Mosquitto y la herramienta de captura de red.
+
+```bash
+sudo apt update && sudo apt install mosquitto-clients tcpdump
+```
+
+<img width="872" height="530" alt="image" src="https://github.com/user-attachments/assets/eccd17c2-1016-493d-9f29-5bc506acb5b9" />
+
+### Suscripción al topic 
+
+Nos suscribimos al topic `"auditoria/esp32/datos"` para interceptar la telemetría en texto plano:
+
+```bash
+mosquitto_sub -h broker.emqx.io -p 1883 -t "auditoria/esp32/datos" -d
+```
+
+<img width="773" height="342" alt="image" src="https://github.com/user-attachments/assets/41740bba-444f-4447-93f2-92f08b0f0a49" />
+
+Como se aprecia arriba, nos hemos suscrito al topic y somos capaces de ver lo que el ESP32 está publicando.
+
+<img width="1919" height="489" alt="image" src="https://github.com/user-attachments/assets/63401d2f-eb1b-46de-9f73-1fc352cdfe3d" />
+
+### Inyección de datos
+
+Como hemos comentado antes, el topic no tiene usuario ni contraseña. ¿Qué pasaría si alguien externo quisiera introducir información errónea? ¿Sería posible? Lo vemos a continuación.
+
+Con el siguiente comando inyectaremos el valor `"666"` en el flujo de datos:
+
+```bash
+mosquitto_pub -h broker.emqx.io -p 1883 -t "auditoria/esp32/datos" -m "666" -d
+```
+
+<img width="1917" height="731" alt="image" src="https://github.com/user-attachments/assets/369a883b-eae3-471d-8308-a0f93ec813e9" />
+
+**Resultado:** Hemos podido mandar información errónea al topic con éxito, demostrando que el canal es vulnerable a ataques de inyección si no se implementa autenticación.
