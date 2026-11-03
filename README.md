@@ -1,11 +1,12 @@
 # mqtt-esp32-security
 
-Vamos a analizar la seguridad de MQTT
+Vamos a analizar la seguridad del protocolo MQTT.
 
-Se ha creado un topic denominado auditoria/esp32/datos, sin protección TLS y sin usuario ni contraseña
+Para esta prueba de concepto, se ha creado un topic denominado `auditoria/esp32/datos`, el cual opera sin protección TLS (puerto 1883) y sin autenticación (sin usuario ni contraseña).
 
-###Codigo del ESP32
+## Código del ESP32
 
+```cpp
 #include <WiFi.h>
 #include <PubSubClient.h>
 
@@ -95,32 +96,3 @@ void loop() {
     valor += 10; 
   }
 }
-
-###Terminal en Kali Linux
-
-En primer lugar actualizamos el repositorio e instalamos mosquitto-clients
-
-sudo apt update && sudo apt install mosquitto-clients tcpdump
-
-<img width="872" height="530" alt="image" src="https://github.com/user-attachments/assets/eccd17c2-1016-493d-9f29-5bc506acb5b9" />
-
-###Suscripción al topic
-Nos suscribimos al topic "auditoria/esp32/datos" 
-
-mosquitto_sub -h broker.emqx.io -p 1883 -t "auditoria/esp32/datos" -d
-
-<img width="773" height="342" alt="image" src="https://github.com/user-attachments/assets/41740bba-444f-4447-93f2-92f08b0f0a49" />
-
-Como bien se aprecia arriba, nos hemos suscrito al topic y somos capaces de ver lo que se publica.
-
-<img width="1919" height="489" alt="image" src="https://github.com/user-attachments/assets/63401d2f-eb1b-46de-9f73-1fc352cdfe3d" />
-
-Como bien hemos comentado antes, el topic no tiene ni user ni pass ¿qué pasaria si alguien quisiera introducir información errónea? ¿sería posible?. Lo vemos ahora
-Con el siguiente comando se debería recibir en el topic un "666"
-
-mosquitto_pub -h broker.emqx.io -p 1883 -t "auditoria/esp32/datos" -m "666" -d
-
-<img width="1917" height="731" alt="image" src="https://github.com/user-attachments/assets/369a883b-eae3-471d-8308-a0f93ec813e9" />
-
-Hemos podido mandar informacion errónea al topic
-
